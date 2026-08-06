@@ -1,11 +1,23 @@
 # DRY Eyes
 
+![DRY Eyes](./assets/Background.png)
+
+**Finds semantic duplicate code for [Claude Code](https://claude.com/claude-code) — the
+same business rule, calculation, or UI/UX pattern implemented independently more than
+once, often with different behavior each time.**
+
+![Claude Code](https://img.shields.io/badge/Claude_Code-supported-0F6E56)
+
+![How DRY Eyes works](./assets/how-it-works-en.png)
+
 > Finds the same business rule, calculation, or UI/UX pattern implemented
 > independently more than once — often with **different behavior each
 > time** — then compares every variant against the others and against what
 > a correct implementation would actually need. Not a copy-paste detector:
 > jscpd and PMD-CPD already find literal clones cheaply. This is for the
 > duplication those tools can't see.
+
+*[Leia em português](./README.pt-BR.md) · [Lee en español](./README.es.md)*
 
 ## Why this exists
 

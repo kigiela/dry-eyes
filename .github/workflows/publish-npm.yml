@@ -1,0 +1,76 @@
+name: Publish to npm
+
+# Triggered by publishing a GitHub Release (which creates/points to a tag,
+# e.g. v0.1.0). Nothing publishes on every push to main — a release is a
+# deliberate, explicit action a maintainer takes. See docs/release.md for the
+# full cut-a-release checklist.
+#
+# Auth: npm Trusted Publishing (OIDC) — https://docs.npmjs.com/trusted-publishers
+# No NPM_TOKEN secret needed at all. One-time setup on npmjs.com instead:
+# package settings → Trusted Publisher → GitHub Actions → org "kigiela",
+# repo "dry-eyes", workflow filename "publish-npm.yml", allowed action
+# "npm publish". Requires npm CLI >= 11.5.1 and Node >= 22.14.0 (hence
+# node-version below), both handled by actions/setup-node.
+#
+# No major-version-tag-moving step here, unlike 16-eyes' publish-npm.yml —
+# that step exists there only because 16-eyes' action.yml/CI templates tell
+# consumers to pin `uses: kigiela/16-eyes@v1`. DRY Eyes has no action.yml or
+# CI templates in v1 (Claude Code only, no CI wiring — see SKILL.md's "What
+# this does not do"), so there's no consumer needing a rolling major tag yet.
+# Add that step back if/when DRY Eyes ships its own GitHub Action.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to (re-)publish, e.g. v0.1.0 — for manual retries when a release's publish run failed"
+        required: true
+
+permissions:
+  contents: read
+  id-token: write # required for OIDC trusted publishing
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Force npm CLI >= 11.5.1 (required for Trusted Publishing) and show versions
+        run: |
+          npm install -g npm@latest
+          echo "node: $(node --version)"
+          echo "npm: $(npm --version)"
+
+      - name: Verify the release tag matches package.json's version
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name || github.event.inputs.tag }}
+        run: |
+          set -euo pipefail
+          TAG_VERSION="${TAG_NAME#v}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Release tag ($TAG_NAME) doesn't match package.json's version ($PKG_VERSION). Bump package.json, commit, and re-tag before releasing — never publish a version that doesn't match its tag."
+            exit 1
+          fi
+          echo "Tag $TAG_NAME matches package.json version $PKG_VERSION — proceeding."
+
+      - name: Sanity-check the package before publishing
+        run: |
+          set -euo pipefail
+          for f in $(find src bin -name "*.js"); do node --check "$f"; done
+          for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json skills/dry-eyes/assets/config.schema.json skills/dry-eyes/assets/probes.schema.json; do
+            node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))"
+          done
+          sh -n skills/dry-eyes/assets/collect-signals.sh
+          npm pack --dry-run
+
+      - name: Publish to npm
+        run: npm publish --access public

@@ -33,16 +33,23 @@ correct implementation would still need to handle.
 ## Install
 
 ```bash
-git clone https://github.com/kigiela/dry-eyes.git
-cd dry-eyes
-node bin/cli.js install --project   # this repo's .claude/skills/dry-eyes
+npx dry-eyes install --project   # this repo's .claude/skills/dry-eyes
 # or, omit --project to install globally at ~/.claude/skills/user/dry-eyes
 ```
 
-(`npx dry-eyes install` once this is published to npm — not yet.)
-
 A brand-new Claude Code session may be needed afterward to discover the
 skill (skills are read at session start).
+
+<details>
+<summary>Installing from a local clone (for contributing to DRY Eyes itself)</summary>
+
+```bash
+git clone https://github.com/kigiela/dry-eyes.git
+cd dry-eyes
+node bin/cli.js install --project
+```
+
+</details>
 
 ## Use
 

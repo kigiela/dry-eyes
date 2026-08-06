@@ -1,6 +1,6 @@
 # DRY Eyes
 
-![DRY Eyes](./assets/Background.png)
+![DRY Eyes](../assets/Background.png)
 
 **Encontra duplicação semântica de código para [Claude Code](https://claude.com/claude-code)
 — a mesma regra de negócio, cálculo ou padrão de UI/UX implementado de forma
@@ -8,7 +8,7 @@ independente mais de uma vez, muitas vezes com comportamento diferente em cada v
 
 ![Claude Code](https://img.shields.io/badge/Claude_Code-suportado-0F6E56)
 
-![Como o DRY Eyes funciona](./assets/how-it-works-pt-br.png)
+![Como o DRY Eyes funciona](../assets/how-it-works-pt-br.png)
 
 > Encontra a mesma regra de negócio, cálculo ou padrão de UI/UX implementado
 > de forma independente mais de uma vez — muitas vezes com **comportamento
@@ -17,7 +17,7 @@ independente mais de uma vez, muitas vezes com comportamento diferente em cada v
 > de cópia literal: jscpd e PMD-CPD já encontram clones textuais de forma
 > barata. Isso é para a duplicação que essas ferramentas não enxergam.
 
-*[Read in English](./README.md) · [Lee en español](./README.es.md)*
+*[Read in English](../README.md) · [Lee en español](./README.es.md)*
 
 ## Por que isso existe
 

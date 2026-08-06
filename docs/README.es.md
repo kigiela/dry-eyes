@@ -1,6 +1,6 @@
 # DRY Eyes
 
-![DRY Eyes](./assets/Background.png)
+![DRY Eyes](../assets/Background.png)
 
 **Encuentra duplicación semántica de código para [Claude Code](https://claude.com/claude-code)
 — la misma regla de negocio, cálculo o patrón de UI/UX implementado de forma
@@ -8,7 +8,7 @@ independiente más de una vez, muchas veces con comportamiento diferente en cada
 
 ![Claude Code](https://img.shields.io/badge/Claude_Code-compatible-0F6E56)
 
-![Cómo funciona DRY Eyes](./assets/how-it-works-es.png)
+![Cómo funciona DRY Eyes](../assets/how-it-works-es.png)
 
 > Encuentra la misma regla de negocio, cálculo o patrón de UI/UX
 > implementado de forma independiente más de una vez — muchas veces con
@@ -18,7 +18,7 @@ independiente más de una vez, muchas veces con comportamiento diferente en cada
 > encuentran clones textuales de forma barata. Esto es para la duplicación
 > que esas herramientas no pueden ver.
 
-*[Read in English](./README.md) · [Leia em português](./README.pt-BR.md)*
+*[Read in English](../README.md) · [Leia em português](./README.pt-BR.md)*
 
 ## Por qué existe
 

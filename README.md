@@ -17,7 +17,7 @@ once, often with different behavior each time.**
 > jscpd and PMD-CPD already find literal clones cheaply. This is for the
 > duplication those tools can't see.
 
-*[Leia em português](./README.pt-BR.md) · [Lee en español](./README.es.md)*
+*[Leia em português](./docs/README.pt-BR.md) · [Lee en español](./docs/README.es.md)*
 
 ## Why this exists
 

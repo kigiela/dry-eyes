@@ -1,0 +1,159 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "dry-eyes config",
+  "description": "Configuration written by /dry-eyes init and read by /dry-eyes scan. Not required — scan works with sane defaults if this file is absent (auto-bootstrap). THIS FILE IS THE SOURCE OF TRUTH for every numeric default below (minFiles/maxFiles/minSharedLines/maxBuckets/minClusterSize/votesPerCluster etc.) — the same values are necessarily re-declared as fallbacks in assets/collect-signals.sh (a shell script can't import JSON), in the example config.json in references/init-flow.md, and in the Workflow script's own `thresholds`/`comparisonCfg` fallback objects in references/scan-flow.md (since config might not set every field). If you change a default here, grep for its current value across those three files too — there's no build step that keeps them in sync automatically.",
+  "type": "object",
+  "required": ["version"],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "depth": {
+      "type": "string", "enum": ["quick", "thorough"], "default": "thorough",
+      "description": "quick = signals only (no LLM category sweep), 1 comparison vote per cluster, fewer probe categories at init time. thorough = adds the supplementary LLM sweep for signal-invisible duplication, 3 rotated comparison votes, as many categories as the repo warrants."
+    },
+    "language": {
+      "type": "string", "enum": ["en", "pt", "es"], "default": "en",
+      "description": "Default language for the scan report and narration. Can be overridden per-invocation."
+    },
+    "model": {
+      "type": "string", "enum": ["default", "sonnet", "opus", "haiku"], "default": "sonnet",
+      "description": "Which model every subagent call in the scan pipeline (category sweep, triage, verification, comparison, reconciliation, synthesis) uses. 'default' inherits whatever model the invoking Claude Code session itself is on. 'sonnet'/'opus'/'haiku' pins every subagent call to that tier regardless of the session's own model. Defaults to 'sonnet' so a thorough scan's ~150-200 subagent calls stay cost-predictable unless you deliberately choose otherwise."
+    },
+    "excludePatterns": {
+      "type": "array", "items": { "type": "string" },
+      "description": "Glob patterns excluded from every signal and every scope by default (on top of what git already ignores). Tests and migrations are excluded BY DESIGN, not just convenience: duplication inside tests is usually a feature (explicitness over DRY), and migrations are append-only by construction — both are the single biggest noise sources in a naive duplication scan."
+    },
+    "scopes": {
+      "type": "array",
+      "description": "One entry per (language, package) pair to scan. v1 compares ONLY within a scope — cross-scope candidate pairs are never generated, which is how the same-language/same-package rule is enforced mechanically rather than by prompt instruction. Auto-detected by /dry-eyes init from the repo's manifests/workspace layout; editable by hand afterward.",
+      "items": {
+        "type": "object",
+        "required": ["id", "root", "language"],
+        "properties": {
+          "id": { "type": "string", "description": "Slug used in cluster ids and report sections." },
+          "root": { "type": "string", "description": "Path relative to repo root ('.' for the whole repo if not a monorepo)." },
+          "language": { "type": "string" },
+          "include": { "type": "array", "items": { "type": "string" }, "description": "Glob patterns passed to collect-signals.sh --include for this scope." },
+          "independentlyDeployed": { "type": "boolean", "default": false, "description": "Marks a scope as its own deployable service. Used to keep candidate clusters from spanning two services that are SUPPOSED to stay decoupled, even when scan.crossPackage allows spanning packages in general." }
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "properties": {
+        "dir": { "type": "string", "description": "Directory reports are written to, relative to repo root." },
+        "markdownPattern": { "type": "string", "default": "DRY_EYES_SCAN_{date}.md", "description": "Filename pattern for the human-readable report. {date} is replaced with YYYY-MM-DD." },
+        "jsonPattern": { "type": "string", "default": "DRY_EYES_SCAN_{date}.json", "description": "Filename pattern for the machine-readable companion report." },
+        "gitignoreReports": {
+          "type": "boolean", "default": false,
+          "description": "Whether /dry-eyes init added the output dir/pattern to .gitignore. Defaults to false — the OPPOSITE of a security-audit tool's usual default: a duplication report is a refactoring backlog a team normally wants in git, not a document full of exploit steps. Asked explicitly at init, never decided silently."
+        }
+      }
+    },
+    "probesPointer": {
+      "type": "string", "default": ".dry-eyes/probes.json",
+      "description": "Path to the persisted repo profile + signal-probe set written by /dry-eyes init (the deliberate counterpart to a lens set: a PROBE is a cheap deterministic signal query, not an expensive LLM investigation area). If missing, init runs automatically (non-interactively, with defaults) before scan proceeds."
+    },
+    "lastRunPointer": {
+      "type": "string", "default": ".dry-eyes/last-run.json",
+      "description": "Path to the small JSON pointer file /dry-eyes scan updates after each run, so a future /dry-eyes fix could find the latest report across sessions."
+    },
+    "scan": {
+      "type": "object",
+      "description": "Settings for candidate generation (signal collection + bucketing) — see skills/dry-eyes/assets/collect-signals.sh and references/scan-flow.md's bucketing phase.",
+      "properties": {
+        "crossPackage": {
+          "type": "string", "enum": ["same-language", "never"], "default": "same-language",
+          "description": "'same-language' compares across packages that share a language within a scope's language family (e.g. a monorepo's apps/web + packages/ui) — the common case, and the highest-value finding in most monorepos. 'never' keeps every package fully isolated. Neither setting ever crosses a language boundary (v1 has no cross-language comparison at all), and a scope marked independentlyDeployed is never merged into another scope's candidate pool regardless of this setting."
+        },
+        "maxOccurrencesPerBucket": { "type": "integer", "default": 25, "description": "Above this, a bucket is split (by package first, then into overlapping chunks) before any LLM call sees it — keeps a single triage call's input bounded." },
+        "minClusterSize": { "type": "integer", "default": 2, "description": "A candidate cluster needs at least this many surviving variants to be reported — a single occurrence is not a duplicate." },
+        "maxBuckets": { "type": "integer", "default": 40, "description": "Hard cap on candidate buckets carried into triage, sorted by score first. Every bucket dropped by this cap is logged and disclosed in the report's coverage section — never silently." }
+      }
+    },
+    "comparison": {
+      "type": "object",
+      "description": "Settings for the per-cluster comparative-analysis pass — the core value-add: independent full re-derivations, not refutation (see scan-flow.md's design notes on anti-anchoring).",
+      "properties": {
+        "votesPerCluster": { "type": "integer", "minimum": 1, "maximum": 5, "default": 3, "description": "Independent comparison agents per cluster whose variants provably diverge in behavior (identical-behavior clusters always get exactly 1 — there's nothing to adjudicate). 1 when depth is 'quick'." },
+        "rotateVariantOrder": { "type": "boolean", "default": true, "description": "Each vote sees the variants in a different rotation. This is the anti-anchoring mechanism: a fixed order lets every vote anchor on whichever variant it reads first." }
+      }
+    },
+    "signals": {
+      "type": "object",
+      "description": "Which deterministic candidate-generation signals collect-signals.sh runs, and their thresholds. All five are empirically validated (see scan-flow.md's design notes) — disable one only if it's proving noisy for your repo's specific shape.",
+      "properties": {
+        "literalCooccurrence": {
+          "type": "object",
+          "description": "Repeated distinctive string literals (error messages, toasts, regexes) across a bounded number of files, grouped by which FILE SET they co-occur in (not by literal) — collapses many near-identical literals pointing at the same files into one candidate instead of one-per-literal.",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "minFiles": { "type": "integer", "default": 3 },
+            "maxFiles": { "type": "integer", "default": 12, "description": "Above this, a literal is almost always a shared constant that should already be centralized, or generic noise — reported separately, not as a duplication cluster." },
+            "minLength": { "type": "integer", "default": 14 },
+            "maxLength": { "type": "integer", "default": 110 },
+            "topN": { "type": "integer", "default": 300 }
+          }
+        },
+        "pathMirror": {
+          "type": "object",
+          "description": "Files/directories that differ at exactly one NON-TERMINAL path segment (e.g. connectors/*/deal.rb) — adapter-per-vendor or per-tenant reimplementation. A terminal wildcard is deliberately excluded: it degenerates into \"files in a directory\", pure noise.",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "nonTerminalWildcardOnly": { "type": "boolean", "default": true },
+            "minVariants": { "type": "integer", "default": 2 },
+            "topN": { "type": "integer", "default": 200 }
+          }
+        },
+        "lineOverlap": {
+          "type": "object",
+          "description": "Comment/string/number-masked lines shared across a bounded number of files, scored by shared-line count with a scaffolding penalty (class/def/end/require-shaped lines are demoted, never hard-rejected) — catches structurally similar blocks that share no literal or name.",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "minSharedLines": { "type": "integer", "default": 8 },
+            "minLineLength": { "type": "integer", "default": 25, "description": "Normalized lines shorter than this are dropped before counting — too short to be meaningful signal on their own." },
+            "minOccurrences": { "type": "integer", "default": 3 },
+            "maxOccurrences": { "type": "integer", "default": 12 },
+            "topN": { "type": "integer", "default": 400 }
+          }
+        },
+        "nameFamily": {
+          "type": "object",
+          "description": "Function/method names sharing a domain word (e.g. 'discount', 'imposto') across at least 2 files. MUST stay domain-word-gated: ungated, this signal is dominated by framework conventions (call/initialize/perform/index/show) — verified empirically.",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "requireDomainWord": { "type": "boolean", "default": true, "description": "Setting this false is not recommended — see the description above." },
+            "minVariants": { "type": "integer", "default": 2 },
+            "topN": { "type": "integer", "default": 200 }
+          }
+        },
+        "concernMechanism": {
+          "type": "object",
+          "description": "For a profile-identified concern (e.g. \"how user-facing errors are shown\"), counts files per mechanism (toast / inline error state / flash message / ...) and flags files using more than one mechanism family for the same concern. This is the signal that directly targets the inconsistent-UX-pattern case (a screen with a toast, a screen without) — invisible to all four signals above.",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true }
+          }
+        },
+        "externalCloneTool": {
+          "type": "object",
+          "description": "Optional, opt-in adapter for an already-installed textual clone detector (jscpd, PMD CPD). Never required: literal/token-level clone detection is a solved, deterministic problem those tools already do cheaply — DRY Eyes' comparison layer can sit on top of whatever candidate source is available, but v1 doesn't bundle or require one.",
+          "properties": {
+            "enabled": { "type": "boolean", "default": false },
+            "command": { "type": ["string", "null"], "default": null }
+          }
+        }
+      }
+    },
+    "suppress": {
+      "type": "array",
+      "description": "Paths whose duplication is a deliberate architectural choice (adapter-per-vendor layers, generated clients) — indistinguishable from real duplication to every cheap signal, so this is a v1 requirement, not a nicety. Every suppression is listed in the report; suppressed is never silent.",
+      "items": {
+        "type": "object",
+        "required": ["pathGlob", "reason"],
+        "properties": {
+          "pathGlob": { "type": "string" },
+          "reason": { "type": "string" }
+        }
+      }
+    }
+  }
+}

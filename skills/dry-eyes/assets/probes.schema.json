@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "dry-eyes probes",
+  "description": "Persisted repo profile + duplication-probe set, written once by /dry-eyes init and reused by every /dry-eyes scan — the deliberate counterpart to a security-audit skill's lenses.json: a PROBE configures a cheap deterministic signal (collect-signals.sh), it doesn't investigate anything itself. Profiling a repo and naming its duplication-prone categories is repo-shape work, done once, not per-run work. Plain, editable JSON — if a category is missing, add one by hand and re-run scan; no need to re-run init.",
+  "type": "object",
+  "required": ["version", "generatedAt", "profile"],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "generatedAt": { "type": "string", "description": "ISO timestamp, from the init session's own context." },
+    "gitRev": { "type": ["string", "null"], "description": "git rev-parse HEAD at design time — profiling reasons about the repo AS OF this commit; a repo that has changed substantially since should re-run init." },
+    "profile": {
+      "type": "object",
+      "required": ["languages", "domainSummary", "architectureSummary", "packages", "conceptCategories"],
+      "properties": {
+        "languages": { "type": "array", "items": { "type": "string" } },
+        "frameworks": { "type": "array", "items": { "type": "string" } },
+        "domainSummary": { "type": "string" },
+        "architectureSummary": { "type": "string" },
+        "packages": {
+          "type": "array",
+          "description": "Every package/workspace the profiling pass found — informs config.json's scopes, but is not the same list (this is richer analysis, config.scopes is the actual, user-editable scan-target list).",
+          "items": {
+            "type": "object",
+            "required": ["path", "language", "role"],
+            "properties": {
+              "path": { "type": "string" },
+              "language": { "type": "string" },
+              "role": { "type": "string", "description": "e.g. \"web app\", \"api\", \"shared lib\", \"worker\"." },
+              "independentlyDeployed": { "type": "boolean", "default": false }
+            }
+          }
+        },
+        "sharedModulePaths": {
+          "type": "array", "items": { "type": "string" },
+          "description": "Existing shared/common module locations — used to suggest a repo-idiomatic 'canonical home' for a cluster's proposed consolidation, instead of a generic 'extract a helper'."
+        },
+        "duplicationHypotheses": {
+          "type": "array", "items": { "type": "string" },
+          "description": "Repo-shape observations from the profiling pass, e.g. \"these two directories look like mirrored product lines\" — cheap for an LLM to state from directory names and manifests alone, and empirically found to reliably point at real clusters. Seeds category design; not itself a finding."
+        },
+        "existingCloneTooling": {
+          "type": "array", "items": { "type": "string" },
+          "description": "Any jscpd/PMD-CPD/similar config already present in the repo. If non-empty, category design should deprioritize categories whose duplication would be plain textual copy-paste — that tool already finds those."
+        },
+        "conceptCategories": {
+          "type": "array",
+          "description": "The duplication-prone categories designed for THIS repo (validation rules, monetary calculations, error/notification UX patterns, ...) — repo-specific, not a generic fixed list. Each seeds signal parameters (domain words, mechanism patterns) AND, in 'thorough' mode, an LLM inventory-sweep prompt that catches duplication sharing no surface signal at all.",
+          "items": {
+            "type": "object",
+            "required": ["id", "label", "scope", "priority"],
+            "properties": {
+              "id": { "type": "string", "description": "Slug, used in signal parameterization and report grouping." },
+              "label": { "type": "string" },
+              "focus": { "type": "string", "description": "One line: what concept this category is about." },
+              "conceptExamples": { "type": "array", "items": { "type": "string" } },
+              "scope": {
+                "type": "object",
+                "required": ["language"],
+                "properties": {
+                  "language": { "type": "string" },
+                  "packages": { "type": "array", "items": { "type": "string" } }
+                }
+              },
+              "domainWords": {
+                "type": "array", "items": { "type": "string" },
+                "description": "Feeds signals.nameFamily's gating for this category. Without this, name-family clustering is dominated by framework conventions (call/initialize/perform) — verified empirically."
+              },
+              "mechanisms": {
+                "type": "array",
+                "description": "Feeds signals.concernMechanism, if this category represents a 'concern' with multiple possible implementation mechanisms (e.g. error display via toast vs. inline state vs. flash message).",
+                "items": {
+                  "type": "object",
+                  "required": ["label", "pattern"],
+                  "properties": {
+                    "label": { "type": "string" },
+                    "pattern": { "type": "string", "description": "ERE pattern (no backreferences — must work with both ripgrep's and grep -E's engines)." }
+                  }
+                }
+              },
+              "expectedSharedHome": {
+                "type": "string",
+                "description": "If this concept were factored out once, where would it live in THIS repo? Derived from sharedModulePaths. Turns a cluster's recommendation into repo-idiomatic prose instead of a generic 'extract a helper'."
+              },
+              "inventoryPrompt": {
+                "type": "string",
+                "description": "Complete, standalone brief for an independent subagent's inventory sweep in 'thorough' mode: what to grep/read for this category across the whole scope, and what to return (an INVENTORY of occurrences, not duplicate claims — that's a later pipeline stage's job)."
+              },
+              "priority": { "type": "string", "enum": ["high", "medium", "low"] }
+            }
+          }
+        }
+      }
+    }
+  }
+}

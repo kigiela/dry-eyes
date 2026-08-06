@@ -1,0 +1,44 @@
+{
+  "name": "dry-eyes",
+  "version": "0.1.0",
+  "description": "Finds SEMANTIC duplicate code across a whole repository for Claude Code — the same business rule, calculation, or UI/UX pattern implemented independently more than once, often with different behavior each time. Not a copy-paste/token clone detector: profiles the repo, picks cheap deterministic duplication signals, clusters candidates, verifies each cluster skeptically, then compares every variant's actual behavior against the others. Install, then use /dry-eyes init and /dry-eyes scan.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "dry-eyes": "bin/cli.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "skills",
+    ".claude-plugin",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "claude-code",
+    "claude",
+    "claude-skill",
+    "claude-code-plugin",
+    "dry",
+    "duplicate-code",
+    "code-duplication",
+    "code-review",
+    "refactoring",
+    "static-analysis",
+    "ai-agent",
+    "agent-skill",
+    "skill"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kigiela/dry-eyes.git"
+  },
+  "homepage": "https://github.com/kigiela/dry-eyes#readme",
+  "bugs": {
+    "url": "https://github.com/kigiela/dry-eyes/issues"
+  }
+}

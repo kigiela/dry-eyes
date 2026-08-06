@@ -1,0 +1,14 @@
+{
+  "name": "dry-eyes",
+  "owner": {
+    "name": "kigiela"
+  },
+  "description": "Semantic duplicate-code scans for Claude Code.",
+  "plugins": [
+    {
+      "name": "dry-eyes",
+      "source": "./",
+      "description": "Finds the same business rule, calculation, or UI/UX pattern implemented independently more than once, often with different behavior each time, and compares every variant. Adds /dry-eyes init, /dry-eyes scan."
+    }
+  ]
+}

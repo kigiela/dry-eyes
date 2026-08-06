@@ -1,0 +1,19 @@
+{
+  "name": "dry-eyes",
+  "description": "Finds semantic duplicate code across a whole repository — the same business rule, calculation, or UI/UX pattern implemented independently more than once, often with different behavior each time — and compares the variants against each other. Not a copy-paste/token clone detector. Adds /dry-eyes init, /dry-eyes scan.",
+  "version": "0.1.0",
+  "author": {
+    "name": "kigiela"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/kigiela/dry-eyes",
+  "repository": "https://github.com/kigiela/dry-eyes",
+  "keywords": [
+    "duplicate-code",
+    "code-duplication",
+    "dry-principle",
+    "static-analysis",
+    "ai-agent"
+  ],
+  "skills": ["./skills/"]
+}

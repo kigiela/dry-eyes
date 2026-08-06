@@ -16,6 +16,8 @@
     "skills/dry-eyes",
     ".claude-plugin",
     "README.md",
+    "README.pt-BR.md",
+    "README.es.md",
     "LICENSE"
   ],
   "keywords": [

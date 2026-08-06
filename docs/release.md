@@ -47,13 +47,12 @@ described below, with no further manual `npm publish` ever needed.
 
 1. Bump the version in [`package.json`](../package.json) (semver — patch for fixes,
    minor for new features like a new subcommand, major for breaking changes to the
-   config schema or CLI flags). Below `1.0.0`, treat a minor bump as the practical
-   equivalent of "breaking" — semver makes no compatibility promise at all pre-1.0.
+   config schema or CLI flags).
 2. Commit and merge that bump to `main`.
 3. Create a GitHub Release with a tag matching the new version, prefixed with `v`
-   (e.g. version `0.1.0` → tag `v0.1.0`):
+   (e.g. version `1.0.0` → tag `v1.0.0`):
    ```bash
-   gh release create v0.1.0 --title "v0.1.0" --generate-notes
+   gh release create v1.0.0 --title "v1.0.0" --generate-notes
    ```
    (`--generate-notes` drafts release notes from merged PRs since the last tag — edit
    before publishing if you want a hand-written summary instead.)

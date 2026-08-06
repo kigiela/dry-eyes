@@ -22,13 +22,26 @@ Auth is [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers) — 
 Requires npm CLI ≥ 11.5.1 and Node ≥ 22.14.0, which is why the workflow pins
 `node-version: "22"` via `actions/setup-node`.
 
-**Note:** since this package has never been published, the `dry-eyes` package won't
-exist on npmjs.com yet when you go looking for its settings page. Trusted Publishing
-can be configured **before** the first publish too — npmjs.com has a "create a Trusted
-Publisher for a package that doesn't exist yet" flow under your account's Trusted
-Publishers settings (not the package's own settings page, since there is no package
-page yet). Use that for the very first release; the per-package settings page works
-for every release after.
+**The very first release is a chicken-and-egg problem**: Trusted Publishing is
+configured on a package's own Settings page, which doesn't exist until the package
+has been published at least once — there's no npm account-level "pre-register a
+Trusted Publisher for a name that doesn't exist yet" flow (verified: none of npm's
+own docs, the GitHub Actions changelog announcement, or third-party writeups
+describe one; this may simply not exist as a feature).
+
+So, **only for the first-ever release**, publish manually instead of via the
+workflow:
+
+```bash
+npm login          # your own npm account — do this yourself, not via any AI tool
+npm publish --access public
+```
+
+Once that succeeds, the `dry-eyes` package exists and its Settings → Trusted
+Publisher page appears — set it up then (org/user `kigiela`, repo `dry-eyes`,
+workflow `publish-npm.yml`, action `npm publish`, environment blank), and every
+release **after** the first goes through `gh release create` + the workflow as
+described below, with no further manual `npm publish` ever needed.
 
 ## Every release
 

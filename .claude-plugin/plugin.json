@@ -1,7 +1,7 @@
 {
   "name": "dry-eyes",
   "description": "Finds semantic duplicate code across a whole repository — the same business rule, calculation, or UI/UX pattern implemented independently more than once, often with different behavior each time — and compares the variants against each other. Not a copy-paste/token clone detector. Adds /dry-eyes init, /dry-eyes scan.",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "author": {
     "name": "kigiela"
   },

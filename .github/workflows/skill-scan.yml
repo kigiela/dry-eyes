@@ -50,8 +50,10 @@ jobs:
 
           if jq -e . scan.json > scan.pretty 2>/dev/null; then :; else cp scan.json scan.pretty; fi
           cat scan.pretty
+          grade=$(jq -r '(.data // empty) | "\(.grade) (\(.score)/100, \(.findings | length) findings)"' scan.json 2>/dev/null || true)
+          [ -n "$grade" ] && echo "::notice::Skill grade: $grade"
           {
-            echo "## Skill scan: HTTP $status (fails below $FAIL_BELOW)"
+            echo "## Skill scan: ${grade:-HTTP $status} (fails below $FAIL_BELOW)"
             echo '```json'
             cat scan.pretty
             echo '```'

@@ -7,6 +7,7 @@
 independente mais de uma vez, muitas vezes com comportamento diferente em cada versão.**
 
 ![Claude Code](https://img.shields.io/badge/Claude_Code-suportado-0F6E56)
+[![Nota de segurança no Skills Directory](https://www.skillsdirectory.com/api/skills/kigiela-dry-eyes/badge)](https://www.skillsdirectory.com/skills/kigiela-dry-eyes)
 
 ![Como o DRY Eyes funciona](../assets/how-it-works-pt-br.png)
 

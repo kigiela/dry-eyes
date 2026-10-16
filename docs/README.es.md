@@ -7,6 +7,7 @@
 independiente más de una vez, muchas veces con comportamiento diferente en cada versión.**
 
 ![Claude Code](https://img.shields.io/badge/Claude_Code-compatible-0F6E56)
+[![Calificación de seguridad en Skills Directory](https://www.skillsdirectory.com/api/skills/kigiela-dry-eyes/badge)](https://www.skillsdirectory.com/skills/kigiela-dry-eyes)
 
 ![Cómo funciona DRY Eyes](../assets/how-it-works-es.png)
 

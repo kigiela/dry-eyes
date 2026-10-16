@@ -7,6 +7,7 @@ same business rule, calculation, or UI/UX pattern implemented independently more
 once, often with different behavior each time.**
 
 ![Claude Code](https://img.shields.io/badge/Claude_Code-supported-0F6E56)
+[![Security grade on Skills Directory](https://www.skillsdirectory.com/api/skills/kigiela-dry-eyes/badge)](https://www.skillsdirectory.com/skills/kigiela-dry-eyes)
 
 ![How DRY Eyes works](./assets/how-it-works-en.png)
 

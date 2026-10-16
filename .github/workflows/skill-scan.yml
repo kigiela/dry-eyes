@@ -1,0 +1,66 @@
+name: Skill scan
+
+# Grades skills/dry-eyes with skillsdirectory.com's scanner (the same rules as
+# the directory listing) on every PR that touches the skill, and fails the
+# check when the grade is worse than FAIL_BELOW. The full response, every
+# finding with its line and a suggested fix, is printed to the log and the job
+# summary. API: https://www.skillsdirectory.com/api-docs#scan
+#
+# Needs the SKILLS_DIRECTORY_KEY repository secret (a Pro key: the scan
+# endpoint is Pro-only). PRs from forks don't get repository secrets, so on
+# those the scan is skipped with a warning instead of failing.
+
+on:
+  pull_request:
+    paths:
+      - "skills/**"
+      - ".github/workflows/skill-scan.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    env:
+      FAIL_BELOW: B
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Zip the skill
+        run: cd skills && zip -qr ../skill.zip dry-eyes -x '*.DS_Store'
+
+      - name: Scan with skillsdirectory.com
+        env:
+          SKILLS_DIRECTORY_KEY: ${{ secrets.SKILLS_DIRECTORY_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SKILLS_DIRECTORY_KEY:-}" ]; then
+            echo "::warning::SKILLS_DIRECTORY_KEY isn't available (fork PR or missing secret); skipping the skill scan."
+            exit 0
+          fi
+
+          # The key goes in through stdin (-H @-), so it never shows up in the
+          # process list. No -f: a 422 body carries the findings, and we want it.
+          status=$(printf 'Authorization: Bearer %s\n' "$SKILLS_DIRECTORY_KEY" |
+            curl -sS -o scan.json -w '%{http_code}' -H @- \
+              -F zip=@skill.zip \
+              "https://www.skillsdirectory.com/api/v1/scan?fail_below=${FAIL_BELOW}")
+
+          if jq -e . scan.json > scan.pretty 2>/dev/null; then :; else cp scan.json scan.pretty; fi
+          cat scan.pretty
+          {
+            echo "## Skill scan: HTTP $status (fails below $FAIL_BELOW)"
+            echo '```json'
+            cat scan.pretty
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          case "$status" in
+            2??) ;;
+            422) echo "::error::Skill grade is worse than $FAIL_BELOW. Each finding above has its line and a fix."; exit 1 ;;
+            401|403) echo "::error::The scan API rejected SKILLS_DIRECTORY_KEY (HTTP $status). It must be a valid Pro key."; exit 1 ;;
+            429) echo "::error::The scan API's daily rate limit is used up (HTTP 429). Re-run after midnight UTC."; exit 1 ;;
+            *) echo "::error::The scan API returned HTTP $status."; exit 1 ;;
+          esac

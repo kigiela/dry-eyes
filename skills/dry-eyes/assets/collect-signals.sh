@@ -31,14 +31,15 @@
 # - Only regular files that `git ls-files` lists UNDER --root are ever opened.
 #   A listed path that climbs out of --root (via an include glob or pathspec
 #   magic such as `:/`) is dropped, and so is every symlink: a repo can track
-#   `creds -> ~/.aws/credentials`, and following it would copy that file's
-#   string literals into the JSON handed to the LLM.
+#   a link pointing at any file outside it, and following it would copy that
+#   file's string literals into the JSON handed to the LLM.
 # - File names never reach a command as options: rg/grep get `--` before the
 #   batched path list, and awk reads paths from a list file instead of taking
 #   them as operands (a tracked file named `--pre=./x.sh` or `-fx.awk` would
 #   otherwise run code).
-# - Nothing from the repo or the concerns file is eval'd or used to build a
-#   file path; numeric options must be plain integers; patterns go via `-e`.
+# - Nothing from the repo or the concerns file is run as code or used to
+#   build a file path; numeric options must be plain integers; patterns go
+#   via `-e`.
 # - The only writes go to a private `mktemp -d` directory, which a flat,
 #   non-recursive cleanup removes on exit (see `cleanup`).
 #
